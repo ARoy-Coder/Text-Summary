@@ -1,13 +1,117 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Text Summarizer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Summarization with spaCy</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            color: #333;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-container {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        input[type="submit"] {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+        .summary-container {
+            margin-top: 20px;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .summary-container h2 {
+            color: #333;
+        }
+        .summary-container p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #555;
+        }
+        .footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+        }
+    </style>
 </head>
 <body>
-    <h2>Text Summarizer</h2>
-    <form action="/summarize" method="post">
-        <textarea name="text" rows="10" cols="80" placeholder="Enter text to summarize..."></textarea><br><br>
-        <input type="submit" value="Summarize">
-    </form>
+    <div class="container">
+        <h1>Text Summarization with spaCy</h1>
+        <div class="form-container">
+            <form action="/process" method="post">
+                <textarea name="text" rows="10" placeholder="Enter text here..."></textarea><br>
+                <input type="submit" value="Summarize Text">
+            </form>
+        </div>
+
+        <div class="summary-container">
+            <h2>Summary</h2>
+            <div id="summary"></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        2024
+    </div>
+
+    <script>
+        document.querySelector('form').onsubmit = function(event) {
+            event.preventDefault();
+
+            var formData = new FormData(event.target);
+
+            fetch('/process', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                var summaryDiv = document.getElementById('summary');
+                summaryDiv.innerHTML = `<p>${data.summary}</p>`;
+            });
+        };
+    </script>
 </body>
 </html>

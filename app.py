@@ -1,45 +1,58 @@
-from flask import Flask, render_template, request
+from flask import Flask, request, render_template, jsonify
 import spacy
-import nltk
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize, sent_tokenize
-from nltk.tokenize import sent_tokenize
+from collections import defaultdict
 from heapq import nlargest
-import string
-from collections import Counter
 
-
+# Initialize spaCy model
+nlp = spacy.load('en_core_web_sm')
 
 app = Flask(__name__)
 
-# Load SpaCy English model
-nlp = spacy.load('en_core_web_sm')
+def summarize_text(text, num_sentences=3):
+    doc = nlp(text)
 
-# Home page
+    # Tokenize sentences
+    sentences = [sent.text for sent in doc.sents]
+    
+    # Calculate term frequency
+    word_freq = defaultdict(int)
+    for token in doc:
+        if token.is_stop or token.is_punct:
+            continue
+        word_freq[token.text.lower()] += 1
+    
+    # Normalize term frequency
+    max_freq = max(word_freq.values())
+    word_freq = {word: freq / max_freq for word, freq in word_freq.items()}
+    
+    # Score sentences
+    sentence_scores = defaultdict(int)
+    for sent in doc.sents:
+        for token in sent:
+            if token.text.lower() in word_freq:
+                sentence_scores[sent.text] += word_freq[token.text.lower()]
+    
+    # Select the top sentences
+    top_sentences = nlargest(num_sentences, sentence_scores, key=sentence_scores.get)
+    return ' '.join(top_sentences)
+
 @app.route('/')
-def home():
+def index():
     return render_template('index.html')
 
-# Summarization function
-def summarize_text(text, num_sentences=2):
-    # Tokenize the text into sentences
-    sentences = sent_tokenize(text)
+@app.route('/process', methods=['POST'])
+def process_text():
+    # Get text from the form
+    text = request.form['text']
     
-    # Join sentences into a single string for SpaCy to process
-    doc = nlp(" ".join(sentences))
+    # Summarize text
+    summary = summarize_text(text)
     
-    # Extract sentences with highest rank and return as summary
-    summary = sorted(doc.sents, key=lambda x: x.rank, reverse=True)[:num_sentences]
+    response = {
+        'summary': summary
+    }
     
-    return " ".join(str(sentence) for sentence in summary)
-
-# Summarization route
-@app.route('/summarize', methods=['POST'])
-def summarize():
-    if request.method == 'POST':
-        text = request.form['text']
-        summary = summarize_text(text)
-        return render_template('result.html', text=text, summary=summary)
+    return jsonify(response)
 
 if __name__ == '__main__':
     app.run(debug=True)
